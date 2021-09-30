@@ -7,6 +7,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <limits.h>
+#include <pthread.h>
+
+int threadtotal, a_size;
+int num_per_thread;
+int *arr;
 
 
 /*
@@ -44,6 +49,67 @@ void serial_mergesort(int A[], int p, int r)
 		serial_mergesort(A, p, q);
 		serial_mergesort(A, q+1, r);
 		merge(A, p, q, r);
+	}
+}
+
+/*
+*	parallel_mergesort(void *arg)
+*	description: Calls serial_mergesort() as a base case 
+*	after partitioned to the requested amount of threads
+*/
+void *parallel_mergesort(void *arg){
+	int current_thread = (long)arg;
+	int left = current_thread * (num_per_thread)+1;
+	int right = (current_thread + 1) * num_per_thread;
+	if (current_thread == threadtotal-1){
+		right += a_size%threadtotal;
+	}
+	int middle = left + (right - left) / 2;
+	if (left < right){
+		serial_mergesort(arr, left, right);
+		serial_mergesort(arr, left + 1, right);
+		merge(arr, left, middle, right);
+	}
+
+return 0;
+}
+
+
+/*
+*p_mergesort(int A[], int p, int r, int threadcount)
+*	description: called from mytests.c with parameters to
+*	use for thread creation
+*/
+void p_mergesort(int A[], int r, int threadcount){
+
+	threadtotal = threadcount;
+	a_size = r;
+	arr = (int *) malloc(sizeof(int) * (r+1));
+	arr = A;
+	num_per_thread = r/threadcount;
+
+	pthread_t threads[threadcount];
+	for (long i = 0; i < threadcount; i++){
+		pthread_create(&threads[i], NULL, parallel_mergesort, (void *)i);
+	}
+	for (int i = 0; i < threadcount; i++){
+		pthread_join(threads[i], NULL);
+	}
+	final_merge(arr, threadcount,1);
+}
+
+void final_merge(int A[], int npt ,int amplitude){
+	for(int i = 0; i < npt; i = i+2){
+		int left = i * (num_per_thread * amplitude)+1;
+		int right = (i+2)* amplitude * num_per_thread;
+		int middle = left + amplitude * num_per_thread - 1;
+		if (right >= a_size-1){
+			right = a_size;
+		}
+		merge(A, left, middle, right);
+	}
+	if (npt / 2 >= 1){
+		final_merge(A, npt / 2, amplitude * 2);
 	}
 }
 

@@ -10,6 +10,8 @@
 // function prototypes
 int check_if_sorted(int A[], int n);
 void generate_random_array(int A[], int n, int seed);
+void p_mergesort(int A[], int n, int threadcount);
+void* parallel_mergesort(void* arg);
 void serial_mergesort(int A[], int p, int r);
 void merge(int A[], int p, int q, int r);
 void insertion_sort(int A[], int p, int r);
@@ -103,18 +105,17 @@ int check_if_sorted(int A[], int n)
 
 
 
-
 int main(int argc, char **argv) {
 
-	if (argc < 2) { // there must be at least one command-line argument
-			fprintf(stderr, "Usage: %s <input size> [<seed>] \n", argv[0]);
+	if (argc < 3) { // there must be at least one command-line argument
+			fprintf(stderr, "Usage: %s <threads> <input size> [<seed>] \n", argv[0]);
 			exit(1);
 	}
 
-	int n = atoi(argv[1]);
+	int n = atoi(argv[2]);
 	int seed = 1;
-	if (argc == 3)
-		seed = atoi(argv[2]);
+	if (argc == 4)
+		seed = atoi(argv[3]);
 
 	int *A = (int *) malloc(sizeof(int) * (n+1)); // n+1 since we are using A[1]..A[n]
 
@@ -127,8 +128,22 @@ int main(int argc, char **argv) {
 
 	// sort the input (and time it)
 	start_time = getMilliSeconds();
-	serial_mergesort(A,1,n);
+	//serial_mergesort(A,1,n);
+	//sorting_time = getMilliSeconds() - start_time;
+
+	//Pthread creation and sorting:
+	int threadcount = atoi(argv[1]);
+
+	p_mergesort(A,n,threadcount);
+
+	//timing stop
 	sorting_time = getMilliSeconds() - start_time;
+
+		for (int i = 1; i < (n+1); i++){
+		if (A[i] < A[i-1]){
+			printf("%d should be before %d, %d \n",A[i], A[i-1], i);
+		}	
+	}
 
 	// print results if correctly sorted otherwise cry foul and exit
 	if (check_if_sorted(A,n)) {

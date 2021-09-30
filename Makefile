@@ -1,6 +1,6 @@
 CC = gcc
-CFLAGS = -Wall -Wextra -Wpointer-arith -Wstrict-prototypes -std=gnu89 -fPIC -MMD -MP
-LDFLAGS = -shared
+CFLAGS = -Wall -Wextra -Wpointer-arith -Wstrict-prototypes -std=gnu99 -fPIC -MMD -MP  -pthread
+LDFLAGS = -shared -lpthread
 
 all: libmylab.so mytests
 
